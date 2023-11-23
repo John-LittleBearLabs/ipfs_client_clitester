@@ -1,0 +1,13 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/lbl/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/232.9921.42/bin/ninja/linux/x64/ninja -G Ninja -S /home/lbl/code/clitester -B /home/lbl/code/clitester
+-- The CXX compiler identification is GNU 13.2.1
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/lib64/ccache/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at CMakeLists.txt:7 (add_subdirectory):
+  add_subdirectory given source "ipfs_client" which is not an existing
+  directory.
+
+
+-- Configuring incomplete, errors occurred!
