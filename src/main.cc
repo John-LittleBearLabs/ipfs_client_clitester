@@ -48,7 +48,7 @@ int main(int const argc, char const* const argv[]) {
         return false;
       }
       auto now = std::time(nullptr);
-      auto end = running + 9 + requests.size();
+      auto end = running + 30 + requests.size();
       if (end > now) {
         std::clog << (end - now) << "s remain.\n";
         return true;
@@ -69,14 +69,23 @@ int main(int const argc, char const* const argv[]) {
 }
 
 namespace {
+    std::map<std::string,int> stati;
     void handle_response(ipfs::IpfsRequest const& req, ipfs::Response const& res) {
-        running = std::time(nullptr) - requests.size();
-        std::clog << req.path().to_string() << " got status " << res.status_ << std::endl;
+        if (!stati.emplace(req.path().to_string(), res.status_).second) {
+        return;
+        }
+          std::clog << req.path().to_string() << " got status " << res.status_;
+          if (res.status_ == 404) {
+            std::clog << " body:" << res.body_;
+          }
+          running = std::time(nullptr) + requests.size();
+        std::clog << std::endl;
+
         auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
         if (res.status_ == 200) {
           std::string file_name{req.path().to_string()};
           for (auto &c : file_name) {
-            if (!std::isalnum(c)) {
+            if (!std::isalnum(c) && c != '.') {
               c = '_';
             }
           }
