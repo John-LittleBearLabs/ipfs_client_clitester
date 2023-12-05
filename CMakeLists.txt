@@ -3,7 +3,8 @@ project(clitester
   DESCRIPTION "A standalone binary to exercize ipfs_client in a non-Chromium way"
   LANGUAGES CXX
 )
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 
 file(COPY_FILE
     "${CMAKE_CURRENT_LIST_DIR}/conanfile.txt"
