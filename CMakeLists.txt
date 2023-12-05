@@ -16,7 +16,8 @@ execute_process(
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 execute_process(
-    COMMAND ls -lrth i*cmake
+    COMMAND pwd
+    COMMAND ls -lrth
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 find_package(ipfs_client
