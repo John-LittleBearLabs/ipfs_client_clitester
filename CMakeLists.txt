@@ -10,11 +10,21 @@ file(COPY_FILE
     "${CMAKE_CURRENT_BINARY_DIR}/conanfile.txt"
 )
 execute_process(
-    COMMAND conan install ${CMAKE_CURRENT_BINARY_DIR} --output-folder=${CMAKE_CURRENT_BINARY_DIR} --build=missing --settings build_type=${CMAKE_BUILD_TYPE}
+    COMMAND conan install --output-folder=${CMAKE_CURRENT_BINARY_DIR} --build=missing --settings build_type=${CMAKE_BUILD_TYPE} "${CMAKE_CURRENT_BINARY_DIR}"
     COMMAND_ERROR_IS_FATAL ANY
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
-find_package(ipfs_client REQUIRED CONFIG)
+execute_process(
+    COMMAND ls -lrth i*cmake
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+find_package(ipfs_client
+    0.0.0.4
+    EXACT
+    REQUIRED
+    CONFIG
+    PATHS "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_BINARY_DIR}"
+)
 
 file(GLOB srcs  CONFIGURE_DEPENDS src/*.cc)
 add_executable(clitester
