@@ -3,6 +3,7 @@
 #include <ipfs_client/logger.h>
 
 #include <boost/asio/io_context.hpp>
+#include <boost/beast/http/field.hpp>
 
 #include <iterator>
 #include <iostream>
@@ -72,13 +73,18 @@ namespace {
     std::map<std::string,int> stati;
     void handle_response(ipfs::IpfsRequest const& req, ipfs::Response const& res) {
         if (!stati.emplace(req.path().to_string(), res.status_).second) {
-        return;
+          return;
         }
-          std::clog << req.path().to_string() << " got status " << res.status_;
-          if (res.status_ == 404) {
+        std::clog << req.path().to_string() << " got status " << res.status_;
+        if (res.status_ == 404) {
             std::clog << " body:" << res.body_;
-          }
-          running = std::time(nullptr) + requests.size();
+        }
+        if (res.status_ / 100 == 3) {
+            std::clog << " location=" << res.location_ << '\n';
+            requests.push_back(ipfs::IpfsRequest::fromUrl(res.location_, handle_response));
+            return;
+        }
+        running = std::time(nullptr) + requests.size();
         std::clog << std::endl;
 
         auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
