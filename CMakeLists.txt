@@ -25,8 +25,8 @@ find_package(ipfs_client
     EXACT
     REQUIRED
     CONFIG
-    PATHS "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_BINARY_DIR}"
 )
+#PATHS "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_BINARY_DIR}"
 
 file(GLOB srcs  CONFIGURE_DEPENDS src/*.cc)
 add_executable(clitester
