@@ -8,6 +8,7 @@
 #include <iterator>
 #include <iostream>
 #include <fstream>
+#include <set>
 #include <thread>
 
 namespace as = boost::asio;
@@ -70,9 +71,9 @@ int main(int const argc, char const* const argv[]) {
 }
 
 namespace {
-    std::map<std::string,int> stati;
+    std::map<std::string,std::set<int>> stati;
     void handle_response(ipfs::IpfsRequest const& req, ipfs::Response const& res) {
-        if (!stati.emplace(req.path().to_string(), res.status_).second) {
+        if (!stati[req.path().to_string()].emplace(res.status_).second) {
           return;
         }
         std::clog << req.path().to_string() << " got status " << res.status_;
@@ -80,14 +81,24 @@ namespace {
             std::clog << " body:" << res.body_;
         }
         if (res.status_ / 100 == 3) {
-            std::clog << " location=" << res.location_ << '\n';
-            auto reqp = ipfs::IpfsRequest::fromUrl(res.location_, handle_response);
-            requests.push_back(reqp);
-            orc->build_response(reqp);
+            std::clog << " location=" << res.location_ ;
             auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
+            auto parent = *i;
             if (requests.end() != i) {
+              std::clog << " dropping original request...";
               requests.erase(i);
             }
+            auto handle_as_parent = [parent](auto&req,auto&res){
+              std::clog << "Handling a " << res.status_ << " response to "
+                        << req.path().to_string()
+                        << " but pretending it was a response to "
+                        << parent->path().to_string() << '\n';
+              handle_response(*parent,res);
+            };
+            auto reqp = ipfs::IpfsRequest::fromUrl(res.location_, handle_as_parent);
+            std::clog << " and now requesting " << reqp->path().to_string() << '\n';
+            requests.push_back(reqp);
+            orc->build_response(reqp);
             return;
         }
         running = std::time(nullptr) + requests.size();
