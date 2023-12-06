@@ -82,6 +82,10 @@ namespace {
         if (res.status_ / 100 == 3) {
             std::clog << " location=" << res.location_ << '\n';
             requests.push_back(ipfs::IpfsRequest::fromUrl(res.location_, handle_response));
+            auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
+            if (requests.end() != i) {
+              requests.erase(i);
+            }
             return;
         }
         running = std::time(nullptr) + requests.size();
