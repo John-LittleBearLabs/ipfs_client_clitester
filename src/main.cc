@@ -5,6 +5,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/http/field.hpp>
 
+#include <filesystem>
 #include <iterator>
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,8 @@ namespace {
     bool set_log_level(std::string const& level_name);
     std::shared_ptr<ipfs::Orchestrator> orc;
     std::time_t running;
+    void clean_finished();
+    std::string output_path(ipfs::IpfsRequest const&);
 }
 
 int main(int const argc, char const* const argv[]) {
@@ -30,9 +33,11 @@ int main(int const argc, char const* const argv[]) {
     auto yield = [&](){
             while (io.run()) {
                 std::clog.put('.');
+                clean_finished();
                 std::this_thread::sleep_for(1ms);
                 io.reset();
             }
+            clean_finished();
         };
     auto handle_arg = [&](std::string const& arg){
       if (set_log_level(arg)) {
@@ -49,8 +54,9 @@ int main(int const argc, char const* const argv[]) {
       if (requests.empty()) {
         return false;
       }
+      clean_finished();
       auto now = std::time(nullptr);
-      auto end = running + 30 + requests.size();
+      auto end = running + 10 + requests.size();
       if (end > now) {
         std::clog << (end - now) << "s remain.\n";
         return true;
@@ -73,6 +79,7 @@ int main(int const argc, char const* const argv[]) {
 namespace {
     std::map<std::string,std::set<int>> stati;
     void handle_response(ipfs::IpfsRequest const& req, ipfs::Response const& res) {
+        clean_finished();
         if (!stati[req.path().to_string()].emplace(res.status_).second) {
           return;
         }
@@ -88,14 +95,15 @@ namespace {
               std::clog << " dropping original request...";
               requests.erase(i);
             }
-            auto handle_as_parent = [parent](auto&req,auto&res){
+            auto handler = [parent](auto&req,auto&res){
               std::clog << "Handling a " << res.status_ << " response to "
                         << req.path().to_string()
-                        << " but pretending it was a response to "
+                        << " which is also a response to "
                         << parent->path().to_string() << '\n';
               handle_response(*parent,res);
+              handle_response(req,res);
             };
-            auto reqp = ipfs::IpfsRequest::fromUrl(res.location_, handle_as_parent);
+            auto reqp = ipfs::IpfsRequest::fromUrl(res.location_, handler);
             std::clog << " and now requesting " << reqp->path().to_string() << '\n';
             requests.push_back(reqp);
             orc->build_response(reqp);
@@ -106,12 +114,7 @@ namespace {
 
         auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
         if (res.status_ == 200) {
-          std::string file_name{req.path().to_string()};
-          for (auto &c : file_name) {
-            if (!std::isalnum(c) && c != '.') {
-              c = '_';
-            }
-          }
+          auto file_name = output_path(req);
           std::ofstream f{file_name};
           f.write(res.body_.c_str(), res.body_.size());
           std::clog << "Wrote result to " << file_name << '\n';
@@ -136,5 +139,25 @@ namespace {
             }
         }
         return false;
+    }
+    void clean_finished() {
+      for (auto it = requests.begin(); it != requests.end(); ++it) {
+        using namespace std::filesystem;
+        auto f = output_path(**it);
+        if (is_regular_file(f)) {
+          std::clog << "Check output in " << f << '\n';
+          requests.erase(it);
+          return;
+        }
+      }
+    }
+    std::string output_path(ipfs::IpfsRequest const& r) {
+      std::string rv{r.path().to_string()};
+      for (auto &c : rv) {
+        if (!std::isalnum(c) && c != '.') {
+          c = '_';
+        }
+      }
+      return rv;
     }
 }
