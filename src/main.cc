@@ -1,4 +1,4 @@
-#include <ipfs_client/all_inclusive.h>
+#include <ipfs_client/test_context.h>
 #include <ipfs_client/ipfs_request.h>
 #include <ipfs_client/logger.h>
 
@@ -9,6 +9,7 @@
 #include <iterator>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <set>
 #include <thread>
 
@@ -23,6 +24,7 @@ namespace {
     std::time_t running;
     void clean_finished();
     std::string output_path(ipfs::IpfsRequest const&);
+    std::string output_path(ipfs::Response const&);
 }
 
 int main(int const argc, char const* const argv[]) {
@@ -51,10 +53,10 @@ int main(int const argc, char const* const argv[]) {
     };
     std::for_each(std::next(argv), std::next(argv, argc), handle_arg);
     auto still_going = [&](){
+      clean_finished();
       if (requests.empty()) {
         return false;
       }
-      clean_finished();
       auto now = std::time(nullptr);
       auto end = running + 10 + requests.size();
       if (end > now) {
@@ -66,9 +68,6 @@ int main(int const argc, char const* const argv[]) {
       }
     };
     while (still_going()) {
-        yield();
-        std::this_thread::sleep_for(1s);
-        yield();
         for (auto& r : requests) {
           orc->build_response(r);
         }
@@ -114,7 +113,7 @@ namespace {
 
         auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
         if (res.status_ == 200) {
-          auto file_name = output_path(req);
+          auto file_name = res.location_.empty() ? output_path(req) :output_path(res);
           std::ofstream f{file_name};
           f.write(res.body_.c_str(), res.body_.size());
           std::clog << "Wrote result to " << file_name << '\n';
@@ -153,6 +152,15 @@ namespace {
     }
     std::string output_path(ipfs::IpfsRequest const& r) {
       std::string rv{r.path().to_string()};
+      for (auto &c : rv) {
+        if (!std::isalnum(c) && c != '.') {
+          c = '_';
+        }
+      }
+      return rv;
+    }
+    std::string output_path(ipfs::Response const& r) {
+      auto rv = r.location_;
       for (auto &c : rv) {
         if (!std::isalnum(c) && c != '.') {
           c = '_';
