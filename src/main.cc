@@ -113,10 +113,17 @@ namespace {
 
         auto i = std::find_if(requests.begin(), requests.end(), [&req](auto&p){return p.get()==&req;});
         if (res.status_ == 200) {
-          auto file_name = res.location_.empty() ? output_path(req) :output_path(res);
-          std::ofstream f{file_name};
-          f.write(res.body_.c_str(), res.body_.size());
-          std::clog << "Wrote result to " << file_name << '\n';
+          auto write = [&](auto file_name) {
+            std::ofstream f{file_name};
+            f.write(res.body_.c_str(), res.body_.size());
+            std::clog << "Wrote result to " << file_name << '\n';
+          };
+          auto req_path = output_path(req);
+          write(req_path);
+          auto loc_path = output_path(res);
+          if (loc_path.size() && loc_path != req_path) {
+            write(loc_path);
+          }
           if (requests.end() != i) {
             std::clog << "popping done request.\n";
             requests.erase(i);
