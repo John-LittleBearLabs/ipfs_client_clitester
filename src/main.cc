@@ -63,7 +63,7 @@ int main(int const argc, char const* const argv[]) {
         std::clog << (end - now) << "s remain.\n";
         return true;
       } else {
-        std::clog << "Done.\n";
+        std::clog << "Timed out.\n";
         return false;
       }
     };
@@ -73,6 +73,7 @@ int main(int const argc, char const* const argv[]) {
         }
         yield();
     }
+    std::clog << "Done.\n";
 }
 
 namespace {
@@ -124,7 +125,9 @@ namespace {
           if (loc_path.size() && loc_path != req_path) {
             write(loc_path);
           }
-          if (requests.end() != i) {
+          if (requests.end() == i) {
+            std::clog << "Superflous response.\n";
+          } else {
             std::clog << "popping done request.\n";
             requests.erase(i);
           }
