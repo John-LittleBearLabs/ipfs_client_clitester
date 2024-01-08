@@ -31,7 +31,7 @@ namespace {
 int main2(int const argc, char const* const argv[]) {
     as::io_context io;
     SetLevel(ipfs::log::Level::WARN);
-    orc = ipfs::start_default(io);
+    orc = ipfs::start_default(io).second;
     running_until += 9s * argc;
     auto yield = [&](){
             auto handlers_run = io.run_for(60s);
@@ -89,6 +89,7 @@ int main2(int const argc, char const* const argv[]) {
         yield();
     }
     std::clog << "Done.\n";
+    return 0;
 }
 
 namespace {
