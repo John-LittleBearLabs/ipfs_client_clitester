@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 
 int main(int const argc, char const* const argv[]) {
     as::io_context io;
-    SetLevel(ipfs::log::Level::WARN);
+    SetLevel(ipfs::log::Level::Warn);
     auto [ctxt,orc] = ipfs::start_default(io);
     auto handle_arg = [&](std::string const& arg){
       if (set_log_level(arg)) {
