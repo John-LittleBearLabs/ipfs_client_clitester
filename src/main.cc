@@ -22,12 +22,13 @@ using namespace std::chrono_literals;
 int main(int const argc, char const* const argv[]) {
     as::io_context io;
     SetLevel(ipfs::log::Level::Warn);
-    auto [ctxt,orc] = ipfs::start_default(io);
+    auto ctxt = ipfs::start_default(io);
     auto handle_arg = [&](std::string const& arg){
       if (set_log_level(arg)) {
         std::clog << "Log level set to " << arg << ".\n";
       } else {
-        orc->build_response(ipfs::IpfsRequest::fromUrl(arg, handle_response));
+        auto req = ipfs::IpfsRequest::fromUrl(arg, handle_response);
+        ctxt->partition({})->build_response(req);
       }
     };
     std::for_each(std::next(argv), std::next(argv, argc), handle_arg);
