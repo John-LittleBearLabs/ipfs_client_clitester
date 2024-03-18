@@ -25,5 +25,9 @@ void handle_response(ipfs::IpfsRequest const& req, ipfs::Response const& res) {
     if (loc_path.size() && loc_path != req_path) {
       write(loc_path);
     }
+    std::ofstream h{req_path + ".headers.txt"};
+    for (auto [k,v] : res.headers_.headers()) {
+      h << k << ": " << v << '\n';
+    }
   }
 }
