@@ -23,11 +23,16 @@ int main(int const argc, char const* const argv[]) {
     as::io_context io;
     SetLevel(ipfs::log::Level::Warn);
     auto ctxt = ipfs::start_default(io);
+    std::string semantic = "http";
     auto handle_arg = [&](std::string const& arg){
       if (set_log_level(arg)) {
         std::clog << "Log level set to " << arg << ".\n";
+      } else if (arg.starts_with("semantic=")) {
+        semantic.assign(arg, 9);
+        std::clog << "Desired semantic set to " << semantic << ".\n";
       } else {
         auto req = ipfs::IpfsRequest::fromUrl(arg, handle_response);
+        req->semantic(semantic);
         ctxt->partition({})->build_response(req);
       }
     };
